@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,41 +7,43 @@ import {
   TouchableOpacity,
   Platform,
   Linking,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 
-// Only import WebView for native platforms
-let WebView: any = null;
-if (Platform.OS !== 'web') {
-  WebView = require('react-native-webview').WebView;
-}
-
 export default function ScriptureScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { url, reference } = useLocalSearchParams<{ url: string; reference: string }>();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const { url, reference, text: initialText } = useLocalSearchParams<{ 
+    url: string; 
+    reference: string;
+    text?: string;
+  }>();
+  const [loading, setLoading] = useState(false);
+  const [scriptureText, setScriptureText] = useState<string | null>(initialText || null);
 
   const openInBrowser = async () => {
     if (url) {
       try {
-        await WebBrowser.openBrowserAsync(url);
+        if (Platform.OS === 'web') {
+          window.open(url, '_blank');
+        } else {
+          await WebBrowser.openBrowserAsync(url);
+        }
       } catch (e) {
-        // Fallback to Linking
         Linking.openURL(url);
       }
     }
   };
 
-  if (!url) {
+  if (!url && !scriptureText) {
     return (
       <View style={[styles.container, styles.centered]}>
         <Ionicons name="alert-circle" size={48} color="#ff6b6b" />
-        <Text style={styles.errorText}>URL non disponibile</Text>
+        <Text style={styles.errorText}>Scrittura non disponibile</Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>Torna indietro</Text>
         </TouchableOpacity>
@@ -49,151 +51,93 @@ export default function ScriptureScreen() {
     );
   }
 
-  // For web platform, show a preview with option to open externally
-  if (Platform.OS === 'web') {
-    return (
-      <View style={[styles.container, { paddingBottom: insets.bottom }]}>
-        {/* Reference Header */}
-        <View style={styles.header}>
-          <Ionicons name="book" size={20} color="#00cec9" />
-          <Text style={styles.reference}>{reference || 'Scrittura'}</Text>
-        </View>
-
-        {/* Content for Web */}
-        <View style={styles.webContent}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="document-text" size={80} color="#6c5ce7" />
-          </View>
-          
-          <Text style={styles.webTitle}>{reference}</Text>
-          <Text style={styles.webSubtitle}>
-            Tocca il pulsante per leggere questa scrittura sul sito ufficiale wol.jw.org
-          </Text>
-
-          <TouchableOpacity
-            style={styles.openButton}
-            onPress={openInBrowser}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="open-outline" size={24} color="#fff" />
-            <Text style={styles.openButtonText}>Apri su wol.jw.org</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.copyButton}
-            onPress={() => {
-              if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                navigator.clipboard.writeText(url);
-              }
-            }}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="copy-outline" size={20} color="#6c5ce7" />
-            <Text style={styles.copyButtonText}>Copia link</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Info Footer */}
-        <View style={styles.footer}>
-          <Ionicons name="information-circle" size={16} color="#6a6a8a" />
-          <Text style={styles.footerText}>Contenuto da wol.jw.org</Text>
-        </View>
-      </View>
-    );
-  }
-
-  // For native platforms, use WebView
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       {/* Reference Header */}
       <View style={styles.header}>
         <Ionicons name="book" size={20} color="#00cec9" />
         <Text style={styles.reference}>{reference || 'Scrittura'}</Text>
-        <TouchableOpacity onPress={openInBrowser} style={styles.externalButton}>
-          <Ionicons name="open-outline" size={20} color="#6c5ce7" />
-        </TouchableOpacity>
       </View>
 
-      {/* WebView for native */}
-      <View style={styles.webviewContainer}>
-        {loading && (
-          <View style={styles.loadingOverlay}>
+      {/* Scripture Content */}
+      <ScrollView 
+        style={styles.contentContainer}
+        contentContainerStyle={styles.contentInner}
+        showsVerticalScrollIndicator={false}
+      >
+        {loading ? (
+          <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#6c5ce7" />
             <Text style={styles.loadingText}>Caricamento scrittura...</Text>
           </View>
+        ) : scriptureText ? (
+          <>
+            {/* Scripture Text Display */}
+            <View style={styles.scriptureCard}>
+              <View style={styles.quoteIcon}>
+                <Ionicons name="book-outline" size={32} color="#6c5ce7" />
+              </View>
+              <Text style={styles.scriptureText}>{scriptureText}</Text>
+              <Text style={styles.scriptureRef}>— {reference}</Text>
+            </View>
+
+            {/* Source info */}
+            <View style={styles.sourceInfo}>
+              <Ionicons name="checkmark-circle" size={16} color="#00cec9" />
+              <Text style={styles.sourceText}>
+                Traduzione del Nuovo Mondo delle Sacre Scritture
+              </Text>
+            </View>
+          </>
+        ) : (
+          /* No text available - show prompt to open web */
+          <View style={styles.noTextContainer}>
+            <View style={styles.iconContainer}>
+              <Ionicons name="document-text" size={64} color="#6c5ce7" />
+            </View>
+            <Text style={styles.noTextTitle}>{reference}</Text>
+            <Text style={styles.noTextSubtitle}>
+              Il testo non è stato caricato. Puoi leggerlo direttamente sul sito ufficiale.
+            </Text>
+          </View>
         )}
 
-        {error ? (
-          <View style={[styles.centered, { flex: 1, backgroundColor: '#0f0f1a' }]}>
-            <Ionicons name="cloud-offline" size={48} color="#ff6b6b" />
-            <Text style={styles.errorText}>Impossibile caricare la scrittura</Text>
-            <Text style={styles.errorHint}>Verifica la connessione internet</Text>
-            
+        {/* Web Option - Secondary */}
+        <View style={styles.webOptionContainer}>
+          <Text style={styles.webOptionLabel}>
+            {scriptureText ? 'Vuoi leggere di più?' : 'Leggi la scrittura completa:'}
+          </Text>
+          <TouchableOpacity
+            style={styles.webButton}
+            onPress={openInBrowser}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="globe-outline" size={20} color="#fff" />
+            <Text style={styles.webButtonText}>Apri su wol.jw.org</Text>
+            <Ionicons name="open-outline" size={16} color="#fff" />
+          </TouchableOpacity>
+
+          {Platform.OS === 'web' && url && (
             <TouchableOpacity
-              style={styles.openButton}
-              onPress={openInBrowser}
+              style={styles.copyButton}
+              onPress={() => {
+                if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                  navigator.clipboard.writeText(url);
+                }
+              }}
               activeOpacity={0.8}
             >
-              <Ionicons name="open-outline" size={20} color="#fff" />
-              <Text style={styles.openButtonText}>Apri nel browser</Text>
+              <Ionicons name="copy-outline" size={18} color="#6c5ce7" />
+              <Text style={styles.copyButtonText}>Copia link</Text>
             </TouchableOpacity>
+          )}
+        </View>
+      </ScrollView>
 
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={() => {
-                setError(false);
-                setLoading(true);
-              }}
-            >
-              <Ionicons name="refresh" size={20} color="#fff" />
-              <Text style={styles.retryButtonText}>Riprova</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          WebView && (
-            <WebView
-              source={{ uri: url }}
-              style={styles.webview}
-              onLoadStart={() => setLoading(true)}
-              onLoadEnd={() => setLoading(false)}
-              onError={() => {
-                setLoading(false);
-                setError(true);
-              }}
-              onHttpError={() => {
-                setLoading(false);
-                setError(true);
-              }}
-              javaScriptEnabled={true}
-              domStorageEnabled={true}
-              startInLoadingState={true}
-              scalesPageToFit={true}
-              allowsInlineMediaPlayback={true}
-              injectedJavaScript={`
-                // Remove header and footer for cleaner view
-                const header = document.querySelector('header');
-                const footer = document.querySelector('footer');
-                const nav = document.querySelector('nav');
-                if (header) header.style.display = 'none';
-                if (footer) footer.style.display = 'none';
-                if (nav) nav.style.display = 'none';
-                
-                // Improve readability
-                document.body.style.fontSize = '18px';
-                document.body.style.lineHeight = '1.6';
-                document.body.style.padding = '16px';
-                
-                true;
-              `}
-            />
-          )
-        )}
-      </View>
-
-      {/* Info Footer */}
+      {/* Footer */}
       <View style={styles.footer}>
         <Ionicons name="information-circle" size={16} color="#6a6a8a" />
-        <Text style={styles.footerText}>Contenuto da wol.jw.org</Text>
+        <Text style={styles.footerText}>Fonte: wol.jw.org</Text>
       </View>
     </View>
   );
@@ -212,51 +156,143 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    padding: 16,
     backgroundColor: '#1a1a2e',
     borderBottomWidth: 1,
     borderBottomColor: '#2a2a4a',
     gap: 8,
   },
   reference: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#00cec9',
-    flex: 1,
-    textAlign: 'center',
   },
-  externalButton: {
-    padding: 4,
-  },
-  webviewContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  webview: {
+  contentContainer: {
     flex: 1,
   },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0f0f1a',
+  contentInner: {
+    padding: 20,
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
+    paddingVertical: 60,
   },
   loadingText: {
     color: '#8888aa',
     marginTop: 12,
     fontSize: 14,
   },
+  scriptureCard: {
+    backgroundColor: '#1a1a2e',
+    borderRadius: 16,
+    padding: 24,
+    borderLeftWidth: 4,
+    borderLeftColor: '#6c5ce7',
+    marginBottom: 16,
+  },
+  quoteIcon: {
+    marginBottom: 16,
+  },
+  scriptureText: {
+    fontSize: 18,
+    color: '#e0e0e0',
+    lineHeight: 28,
+    fontStyle: 'italic',
+  },
+  scriptureRef: {
+    fontSize: 14,
+    color: '#00cec9',
+    marginTop: 16,
+    textAlign: 'right',
+    fontWeight: '600',
+  },
+  sourceInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginBottom: 24,
+  },
+  sourceText: {
+    fontSize: 12,
+    color: '#6a6a8a',
+    fontStyle: 'italic',
+  },
+  noTextContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  iconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(108, 92, 231, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  noTextTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  noTextSubtitle: {
+    fontSize: 14,
+    color: '#8888aa',
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 280,
+  },
+  webOptionContainer: {
+    alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#2a2a4a',
+    marginTop: 8,
+  },
+  webOptionLabel: {
+    fontSize: 14,
+    color: '#8888aa',
+    marginBottom: 12,
+  },
+  webButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2a2a4a',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 10,
+  },
+  webButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  copyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#6c5ce7',
+    gap: 6,
+  },
+  copyButtonText: {
+    color: '#6c5ce7',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   errorText: {
     color: '#ff6b6b',
     fontSize: 16,
     marginTop: 12,
     fontWeight: '600',
-  },
-  errorHint: {
-    color: '#6a6a8a',
-    fontSize: 14,
-    marginTop: 4,
   },
   backButton: {
     marginTop: 24,
@@ -266,21 +302,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   backButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  retryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    backgroundColor: '#2a2a4a',
-    borderRadius: 8,
-    gap: 8,
-  },
-  retryButtonText: {
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
@@ -298,66 +319,5 @@ const styles = StyleSheet.create({
   footerText: {
     color: '#6a6a8a',
     fontSize: 12,
-  },
-  // Web-specific styles
-  webContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  iconContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(108, 92, 231, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  webTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  webSubtitle: {
-    fontSize: 15,
-    color: '#8888aa',
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 32,
-    maxWidth: 300,
-  },
-  openButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#6c5ce7',
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 10,
-  },
-  openButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  copyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#6c5ce7',
-    gap: 8,
-  },
-  copyButtonText: {
-    color: '#6c5ce7',
-    fontSize: 14,
-    fontWeight: '600',
   },
 });
