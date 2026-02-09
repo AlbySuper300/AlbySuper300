@@ -59,26 +59,40 @@ export default function HomeScreen() {
   };
 
   const deletePresentation = async (id: string) => {
-    Alert.alert(
-      'Conferma eliminazione',
-      'Vuoi davvero eliminare questa presentazione?',
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Elimina',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await axios.delete(`${API_URL}/api/presentations/${id}`);
-              setPresentations(presentations.filter((p) => p.id !== id));
-            } catch (error) {
-              console.error('Error deleting presentation:', error);
-              Alert.alert('Errore', 'Impossibile eliminare la presentazione');
-            }
+    const performDelete = async () => {
+      try {
+        await axios.delete(`${API_URL}/api/presentations/${id}`);
+        setPresentations((prev) => prev.filter((p) => p.id !== id));
+      } catch (error) {
+        console.error('Error deleting presentation:', error);
+        if (Platform.OS === 'web') {
+          window.alert('Errore: Impossibile eliminare la presentazione');
+        } else {
+          Alert.alert('Errore', 'Impossibile eliminare la presentazione');
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      // Use window.confirm on web since Alert.alert doesn't work well
+      const confirmed = window.confirm('Vuoi davvero eliminare questa presentazione?');
+      if (confirmed) {
+        await performDelete();
+      }
+    } else {
+      Alert.alert(
+        'Conferma eliminazione',
+        'Vuoi davvero eliminare questa presentazione?',
+        [
+          { text: 'Annulla', style: 'cancel' },
+          {
+            text: 'Elimina',
+            style: 'destructive',
+            onPress: performDelete,
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const renderItem = ({ item }: { item: Presentation }) => (
