@@ -86,11 +86,59 @@ class NewsResponse(BaseModel):
 
 # ============= Helper Functions =============
 
+async def fetch_scripture_text_from_wol(url: str) -> Optional[str]:
+    """Fetch the actual scripture text from wol.jw.org"""
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            response = await client.get(url, headers=headers, follow_redirects=True)
+            
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                
+                # Try to find verse content
+                # WOL uses specific classes for verse text
+                verses = soup.find_all('span', class_='v')
+                if verses:
+                    text_parts = []
+                    for verse in verses:
+                        # Get verse number
+                        verse_num = verse.find('span', class_='vn')
+                        verse_text = verse.get_text(strip=True)
+                        if verse_num:
+                            num = verse_num.get_text(strip=True)
+                            # Remove the verse number from the text
+                            verse_text = verse_text.replace(num, f'{num} ', 1)
+                        text_parts.append(verse_text)
+                    if text_parts:
+                        return ' '.join(text_parts)
+                
+                # Alternative: look for paragraph with scripture text
+                paragraphs = soup.find_all('p', class_='sb')
+                if paragraphs:
+                    texts = [p.get_text(strip=True) for p in paragraphs]
+                    return ' '.join(texts)
+                
+                # Try finding any article content
+                article = soup.find('article')
+                if article:
+                    # Get all text but clean it up
+                    text = article.get_text(separator=' ', strip=True)
+                    # Limit to reasonable length
+                    if len(text) > 100:
+                        return text[:2000] + "..." if len(text) > 2000 else text
+                        
+        return None
+    except Exception as e:
+        logger.error(f"Error fetching scripture text: {e}")
+        return None
+
 async def fetch_scripture_from_wol(reference: str) -> Optional[Scripture]:
     """Fetch scripture text from wol.jw.org"""
     try:
         # Convert reference to URL format
-        # Example: "Giovanni 3:16" -> search query
         search_query = reference.replace(" ", "+")
         
         # Use the Italian WOL site
@@ -123,36 +171,39 @@ async def fetch_scripture_from_wol(reference: str) -> Optional[Scripture]:
         book_num = None
         chapter = None
         verse = None
+        verse_end = None
         
         for book_name, num in book_mapping.items():
             if ref_lower.startswith(book_name):
                 book_num = num
                 remaining = ref_lower[len(book_name):].strip()
-                # Parse chapter:verse
-                match = re.match(r'(\d+):(\d+(?:-\d+)?)', remaining)
+                # Parse chapter:verse or chapter:verse-verse
+                match = re.match(r'(\d+):(\d+)(?:-(\d+))?', remaining)
                 if match:
                     chapter = match.group(1)
                     verse = match.group(2)
+                    verse_end = match.group(3) if match.group(3) else verse
                 break
         
+        wol_url = None
+        scripture_text = None
+        
         if book_num and chapter:
-            # Build WOL URL
+            # Build WOL URL for the specific verse
             wol_url = f"https://wol.jw.org/it/wol/b/r6/lp-i/nwtsty/{book_num}/{chapter}"
             if verse:
-                wol_url += f"#{book_num}:{chapter}:{verse.split('-')[0]}"
+                wol_url += f"#{book_num}:{chapter}:{verse}"
             
-            return Scripture(
-                reference=reference,
-                text=None,  # Text will be loaded when user clicks
-                url=wol_url
-            )
+            # Try to fetch the text
+            scripture_text = await fetch_scripture_text_from_wol(wol_url)
+        else:
+            # Fallback to search URL
+            wol_url = f"https://wol.jw.org/it/wol/s/r6/lp-i?q={search_query}"
         
-        # Fallback to search URL
-        search_url = f"https://wol.jw.org/it/wol/s/r6/lp-i?q={search_query}"
         return Scripture(
             reference=reference,
-            text=None,
-            url=search_url
+            text=scripture_text,
+            url=wol_url
         )
         
     except Exception as e:
