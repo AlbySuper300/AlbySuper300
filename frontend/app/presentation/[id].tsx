@@ -68,25 +68,15 @@ export default function PresentationDetailScreen() {
   };
 
   const openScripture = (scripture: Scripture) => {
-    if (scripture.url) {
-      router.push({
-        pathname: '/scripture',
-        params: { url: scripture.url, reference: scripture.reference },
-      });
-    } else {
-      // Fallback to search
-      const searchUrl = `https://wol.jw.org/it/wol/s/r6/lp-i?q=${encodeURIComponent(
-        scripture.reference
-      )}`;
-      router.push({
-        pathname: '/scripture',
-        params: { 
-          url: searchUrl, 
-          reference: scripture.reference,
-          text: scripture.text || '',
-        },
-      });
-    }
+    const url = scripture.url || `https://wol.jw.org/it/wol/s/r6/lp-i?q=${encodeURIComponent(scripture.reference)}`;
+    router.push({
+      pathname: '/scripture',
+      params: { 
+        url: url, 
+        reference: scripture.reference,
+        text: scripture.text || '',
+      },
+    });
   };
 
   const toggleObjection = (index: number) => {
