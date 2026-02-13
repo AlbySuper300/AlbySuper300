@@ -182,14 +182,14 @@ export default function HomeScreen() {
           onPress={() => router.push('/generate')}
           activeOpacity={0.8}
         >
-          <Ionicons name="sparkles" size={24} color="#ffd700" />
+          <Text style={styles.fabTextGold}>AI</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.fab, styles.fabPrimary]}
           onPress={() => router.push('/create')}
           activeOpacity={0.8}
         >
-          <Ionicons name="add" size={28} color="#fff" />
+          <Text style={styles.fabTextWhite}>+</Text>
         </TouchableOpacity>
       </View>
     </View>
