@@ -276,6 +276,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6a6a8a',
   },
+  deleteIcon: {
+    color: '#ff6b6b',
+    fontSize: 18,
+    fontWeight: '600',
+  },
   emptyState: {
     alignItems: 'center',
     padding: 32,
