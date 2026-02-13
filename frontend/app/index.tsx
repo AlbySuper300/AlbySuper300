@@ -108,7 +108,7 @@ export default function HomeScreen() {
           </Text>
           {item.is_ai_generated && (
             <View style={styles.aiBadge}>
-              <Ionicons name="sparkles" size={12} color="#ffd700" />
+              <Text style={styles.aiStar}>★</Text>
               <Text style={styles.aiBadgeText}>AI</Text>
             </View>
           )}
