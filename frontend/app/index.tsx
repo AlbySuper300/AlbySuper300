@@ -128,7 +128,7 @@ export default function HomeScreen() {
           onPress={() => deletePresentation(item.id)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="trash-outline" size={20} color="#ff6b6b" />
+          <Text style={styles.deleteIcon}>✕</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
