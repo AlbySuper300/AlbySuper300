@@ -223,8 +223,14 @@ async def fetch_scripture_from_wol(reference: str) -> Optional[Scripture]:
             if verse:
                 wol_url += f"#{book_num}:{chapter}:{verse}"
             
-            # Try to fetch the text
-            scripture_text = await fetch_scripture_text_from_wol(wol_url)
+            # Try to fetch the text with verse info
+            scripture_text = await fetch_scripture_text_from_wol(
+                wol_url, 
+                book_num=book_num, 
+                chapter=chapter, 
+                verse_start=verse, 
+                verse_end=verse_end
+            )
         else:
             # Fallback to search URL
             wol_url = f"https://wol.jw.org/it/wol/s/r6/lp-i?q={search_query}"
