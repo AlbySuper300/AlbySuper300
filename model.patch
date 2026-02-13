@@ -1,0 +1,73 @@
+diff --git a/backend/server.py b/backend/server.py
+index a27442f..7b403e4 100644
+--- a/backend/server.py
++++ b/backend/server.py
+@@ -92,9 +92,11 @@ async def fetch_scripture_text_from_wol(url: str, book_num: str = None, chapter:
+         # Remove the fragment from URL for fetching
+         base_url = url.split('#')[0]
+         
+-        async with httpx.AsyncClient(timeout=15.0) as client:
++        async with httpx.AsyncClient(timeout=10.0) as client:
+             headers = {
+-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
++                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
++                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
++                'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7',
+             }
+             response = await client.get(base_url, headers=headers, follow_redirects=True)
+             
+@@ -112,8 +114,6 @@ async def fetch_scripture_text_from_wol(url: str, book_num: str = None, chapter:
+                     text_parts = []
+                     for verse in verses:
+                         verse_id = verse.get('id', '')
+-                        # ID format: v{book}-{chapter}-{verse}-1
+-                        # Example: v43-3-16-1 for Giovanni 3:16
+                         if verse_id:
+                             parts = verse_id.replace('v', '').split('-')
+                             if len(parts) >= 3:
+@@ -124,44 +124,17 @@ async def fetch_scripture_text_from_wol(url: str, book_num: str = None, chapter:
+                                 if (v_book == book_num and 
+                                     v_chapter == chapter and 
+                                     verse_start_int <= v_verse <= verse_end_int):
+-                                    # Get text content, removing footnote markers
+-                                    verse_text = ''
+-                                    for content in verse.children:
+-                                        if hasattr(content, 'name'):
+-                                            if content.name == 'a' and 'vl' in content.get('class', []):
+-                                                # Verse number
+-                                                verse_text += content.get_text(strip=True) + ' '
+-                                            elif content.name not in ['a'] or 'b' not in content.get('class', []):
+-                                                # Skip footnote links
+-                                                if content.name != 'a' or 'fn' not in content.get('class', []):
+-                                                    verse_text += content.get_text(strip=True)
+-                                        else:
+-                                            verse_text += str(content)
+-                                    
+-                                    # Clean up the text
+                                     clean_text = verse.get_text(strip=True)
+-                                    # Remove + signs from cross-references
+                                     clean_text = clean_text.replace('+', '')
+                                     clean_text = re.sub(r'\*', '', clean_text)
+                                     text_parts.append(clean_text)
+                     
+                     if text_parts:
+                         return ' '.join(text_parts)
+-                
+-                # Fallback: get all verses from the chapter
+-                if verses:
+-                    text_parts = []
+-                    for verse in verses[:5]:  # Limit to first 5 verses for fallback
+-                        clean_text = verse.get_text(strip=True)
+-                        clean_text = clean_text.replace('+', '')
+-                        clean_text = re.sub(r'\*', '', clean_text)
+-                        text_parts.append(clean_text)
+-                    if text_parts:
+-                        return ' '.join(text_parts)
+                         
+         return None
+     except Exception as e:
+-        logger.error(f"Error fetching scripture text: {e}")
++        logger.warning(f"Could not fetch scripture text (may be due to network restrictions): {type(e).__name__}")
+         return None
+ 
+ async def fetch_scripture_from_wol(reference: str) -> Optional[Scripture]:
