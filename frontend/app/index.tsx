@@ -320,4 +320,15 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#ffd700',
   },
+  fabTextWhite: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: '300',
+    marginTop: -2,
+  },
+  fabTextGold: {
+    color: '#ffd700',
+    fontSize: 14,
+    fontWeight: '700',
+  },
 });
