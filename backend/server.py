@@ -86,49 +86,78 @@ class NewsResponse(BaseModel):
 
 # ============= Helper Functions =============
 
-async def fetch_scripture_text_from_wol(url: str) -> Optional[str]:
+async def fetch_scripture_text_from_wol(url: str, book_num: str = None, chapter: str = None, verse_start: str = None, verse_end: str = None) -> Optional[str]:
     """Fetch the actual scripture text from wol.jw.org"""
     try:
+        # Remove the fragment from URL for fetching
+        base_url = url.split('#')[0]
+        
         async with httpx.AsyncClient(timeout=15.0) as client:
             headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
-            response = await client.get(url, headers=headers, follow_redirects=True)
+            response = await client.get(base_url, headers=headers, follow_redirects=True)
             
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
                 
-                # Try to find verse content
-                # WOL uses specific classes for verse text
+                # Find all verse spans
                 verses = soup.find_all('span', class_='v')
-                if verses:
+                
+                if verses and verse_start and book_num and chapter:
+                    # Extract specific verses
+                    verse_start_int = int(verse_start)
+                    verse_end_int = int(verse_end) if verse_end else verse_start_int
+                    
                     text_parts = []
                     for verse in verses:
-                        # Get verse number
-                        verse_num = verse.find('span', class_='vn')
-                        verse_text = verse.get_text(strip=True)
-                        if verse_num:
-                            num = verse_num.get_text(strip=True)
-                            # Remove the verse number from the text
-                            verse_text = verse_text.replace(num, f'{num} ', 1)
-                        text_parts.append(verse_text)
+                        verse_id = verse.get('id', '')
+                        # ID format: v{book}-{chapter}-{verse}-1
+                        # Example: v43-3-16-1 for Giovanni 3:16
+                        if verse_id:
+                            parts = verse_id.replace('v', '').split('-')
+                            if len(parts) >= 3:
+                                v_book = parts[0]
+                                v_chapter = parts[1]
+                                v_verse = int(parts[2])
+                                
+                                if (v_book == book_num and 
+                                    v_chapter == chapter and 
+                                    verse_start_int <= v_verse <= verse_end_int):
+                                    # Get text content, removing footnote markers
+                                    verse_text = ''
+                                    for content in verse.children:
+                                        if hasattr(content, 'name'):
+                                            if content.name == 'a' and 'vl' in content.get('class', []):
+                                                # Verse number
+                                                verse_text += content.get_text(strip=True) + ' '
+                                            elif content.name not in ['a'] or 'b' not in content.get('class', []):
+                                                # Skip footnote links
+                                                if content.name != 'a' or 'fn' not in content.get('class', []):
+                                                    verse_text += content.get_text(strip=True)
+                                        else:
+                                            verse_text += str(content)
+                                    
+                                    # Clean up the text
+                                    clean_text = verse.get_text(strip=True)
+                                    # Remove + signs from cross-references
+                                    clean_text = clean_text.replace('+', '')
+                                    clean_text = re.sub(r'\*', '', clean_text)
+                                    text_parts.append(clean_text)
+                    
                     if text_parts:
                         return ' '.join(text_parts)
                 
-                # Alternative: look for paragraph with scripture text
-                paragraphs = soup.find_all('p', class_='sb')
-                if paragraphs:
-                    texts = [p.get_text(strip=True) for p in paragraphs]
-                    return ' '.join(texts)
-                
-                # Try finding any article content
-                article = soup.find('article')
-                if article:
-                    # Get all text but clean it up
-                    text = article.get_text(separator=' ', strip=True)
-                    # Limit to reasonable length
-                    if len(text) > 100:
-                        return text[:2000] + "..." if len(text) > 2000 else text
+                # Fallback: get all verses from the chapter
+                if verses:
+                    text_parts = []
+                    for verse in verses[:5]:  # Limit to first 5 verses for fallback
+                        clean_text = verse.get_text(strip=True)
+                        clean_text = clean_text.replace('+', '')
+                        clean_text = re.sub(r'\*', '', clean_text)
+                        text_parts.append(clean_text)
+                    if text_parts:
+                        return ' '.join(text_parts)
                         
         return None
     except Exception as e:
