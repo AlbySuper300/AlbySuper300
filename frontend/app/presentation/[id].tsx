@@ -80,7 +80,11 @@ export default function PresentationDetailScreen() {
       )}`;
       router.push({
         pathname: '/scripture',
-        params: { url: searchUrl, reference: scripture.reference },
+        params: { 
+          url: searchUrl, 
+          reference: scripture.reference,
+          text: scripture.text || '',
+        },
       });
     }
   };
