@@ -225,40 +225,77 @@ async def generate_presentation_with_ai(topic: str, news_context: str = None, ex
         if not api_key:
             raise ValueError("EMERGENT_LLM_KEY not configured")
         
+        # Generate a unique seed for variety
+        import random
+        variety_seed = random.randint(1, 1000)
+        
+        # Different intro styles to encourage variety
+        intro_styles = [
+            "una domanda pensierosa",
+            "un'osservazione sulla vita quotidiana", 
+            "un riferimento a qualcosa di attuale",
+            "una riflessione personale",
+            "un complimento sincero seguito da una domanda",
+            "un'osservazione sul quartiere o la zona",
+            "una domanda su un problema comune",
+            "un pensiero positivo sul futuro"
+        ]
+        selected_style = random.choice(intro_styles)
+        
         chat = LlmChat(
             api_key=api_key,
             session_id=f"jwpresent-{uuid.uuid4()}",
-            system_message="""Sei un assistente esperto per i Testimoni di Geova. Il tuo compito è creare presentazioni per l'opera di predicazione casa per casa.
-            
+            system_message=f"""Sei un assistente esperto per i Testimoni di Geova. Il tuo compito è creare presentazioni UNICHE per l'opera di predicazione casa per casa.
+
+REGOLA FONDAMENTALE: Ogni presentazione deve avere un'introduzione COMPLETAMENTE DIVERSA dalle altre, anche se l'argomento è lo stesso.
+
+Per questa presentazione, usa questo stile di introduzione: {selected_style}
+Seed di varietà: {variety_seed}
+
 Le presentazioni devono essere:
 - Rispettose e gentili
 - Basate sulla Bibbia
 - Pertinenti agli avvenimenti attuali quando possibile
 - Pratiche e facili da usare
+- CON INTRODUZIONI SEMPRE DIVERSE E CREATIVE
+
+Tipi di introduzioni da alternare:
+- Domande aperte ("Ha mai pensato...", "Secondo lei...")
+- Osservazioni ("Ho notato che molte persone oggi...", "È interessante vedere come...")
+- Riferimenti attuali ("Con tutto quello che succede nel mondo...")
+- Approcci diretti ("Stiamo condividendo un pensiero biblico...")
+- Approcci indiretti ("Passavo di qui e mi chiedevo...")
 
 Rispondi sempre in italiano e in formato JSON con questa struttura:
-{
+{{
     "title": "Titolo della presentazione",
-    "intro": "Frase di apertura per iniziare la conversazione",
+    "intro": "Frase di apertura UNICA per iniziare la conversazione",
     "main_points": ["Punto 1", "Punto 2"],
     "questions": ["Domanda 1?", "Domanda 2?"],
-    "scriptures": [{"reference": "Giovanni 3:16"}, {"reference": "Matteo 24:14"}],
-    "objections": [{"objection": "Obiezione comune", "response": "Risposta suggerita"}],
+    "scriptures": [{{"reference": "Giovanni 3:16"}}, {{"reference": "Matteo 24:14"}}],
+    "objections": [{{"objection": "Obiezione comune", "response": "Risposta suggerita"}}],
     "topic": "Argomento principale"
-}"""
+}}"""
         ).with_model("openai", "gpt-5.2")
         
-        # Build the prompt
-        prompt_parts = [f"Crea una presentazione per l'opera di predicazione sull'argomento: {topic}"]
+        # Build the prompt with emphasis on uniqueness
+        prompt_parts = [
+            f"Crea una presentazione NUOVA e UNICA per l'opera di predicazione sull'argomento: {topic}",
+            f"\nIMPORTANTE: L'introduzione deve essere DIVERSA da qualsiasi altra. Usa lo stile: {selected_style}",
+            f"\nNumero di varietà: {variety_seed} - usa questo per ispirarti a creare qualcosa di unico."
+        ]
         
         if news_context:
             prompt_parts.append(f"\nContesto delle notizie attuali: {news_context}")
         
         if existing_presentations and len(existing_presentations) > 0:
-            examples = existing_presentations[:2]  # Use max 2 examples
-            prompt_parts.append("\nUsa queste presentazioni esistenti come riferimento per lo stile:")
-            for ex in examples:
-                prompt_parts.append(f"- {ex.get('title', 'N/A')}: {ex.get('intro', 'N/A')}")
+            # Show existing intros to AVOID repetition
+            existing_intros = [ex.get('intro', '') for ex in existing_presentations if ex.get('intro')]
+            if existing_intros:
+                prompt_parts.append("\n⚠️ EVITA di usare introduzioni simili a queste già esistenti:")
+                for intro in existing_intros[:3]:
+                    prompt_parts.append(f"- \"{intro[:100]}...\"")
+                prompt_parts.append("\nCrea un'introduzione COMPLETAMENTE DIVERSA!")
         
         prompt_parts.append("\nRispondi SOLO con il JSON, senza altro testo.")
         
