@@ -220,11 +220,7 @@ export default function GenerateScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.label}>Notizie di attualità</Text>
             <TouchableOpacity onPress={fetchNews} disabled={loadingNews}>
-              <Ionicons
-                name="refresh"
-                size={20}
-                color={loadingNews ? '#6a6a8a' : '#6c5ce7'}
-              />
+              <Text style={loadingNews ? styles.refreshDisabled : styles.refreshIcon}>↻</Text>
             </TouchableOpacity>
           </View>
           <Text style={styles.hint}>
