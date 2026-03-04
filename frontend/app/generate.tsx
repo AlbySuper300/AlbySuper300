@@ -245,11 +245,9 @@ export default function GenerateScreen() {
                 activeOpacity={0.7}
               >
                 <View style={styles.newsCheckbox}>
-                  <Ionicons
-                    name={selectedNews.has(index) ? 'checkbox' : 'square-outline'}
-                    size={24}
-                    color={selectedNews.has(index) ? '#6c5ce7' : '#6a6a8a'}
-                  />
+                  <Text style={selectedNews.has(index) ? styles.checkboxChecked : styles.checkboxUnchecked}>
+                    {selectedNews.has(index) ? '☑' : '☐'}
+                  </Text>
                 </View>
                 <View style={styles.newsContent}>
                   <Text style={styles.newsTitle}>{item.title}</Text>
