@@ -140,7 +140,7 @@ export default function CreateScreen() {
               onPress={() => addItem(setMainPoints, mainPoints, '')}
               style={styles.addButton}
             >
-              <Ionicons name="add-circle" size={24} color="#6c5ce7" />
+              <Text style={styles.addIcon}>＋</Text>
             </TouchableOpacity>
           </View>
           {mainPoints.map((point, index) => (
