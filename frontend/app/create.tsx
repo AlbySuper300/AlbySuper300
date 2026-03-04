@@ -157,7 +157,7 @@ export default function CreateScreen() {
                   onPress={() => removeItem(setMainPoints, mainPoints, index)}
                   style={styles.removeButton}
                 >
-                  <Ionicons name="remove-circle" size={24} color="#ff6b6b" />
+                  <Text style={styles.removeIcon}>－</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -172,7 +172,7 @@ export default function CreateScreen() {
               onPress={() => addItem(setQuestions, questions, '')}
               style={styles.addButton}
             >
-              <Ionicons name="add-circle" size={24} color="#6c5ce7" />
+              <Text style={styles.addIcon}>＋</Text>
             </TouchableOpacity>
           </View>
           {questions.map((question, index) => (
@@ -189,7 +189,7 @@ export default function CreateScreen() {
                   onPress={() => removeItem(setQuestions, questions, index)}
                   style={styles.removeButton}
                 >
-                  <Ionicons name="remove-circle" size={24} color="#ff6b6b" />
+                  <Text style={styles.removeIcon}>－</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -204,7 +204,7 @@ export default function CreateScreen() {
               onPress={() => addItem(setScriptures, scriptures, '')}
               style={styles.addButton}
             >
-              <Ionicons name="add-circle" size={24} color="#6c5ce7" />
+              <Text style={styles.addIcon}>＋</Text>
             </TouchableOpacity>
           </View>
           {scriptures.map((scripture, index) => (
@@ -221,7 +221,7 @@ export default function CreateScreen() {
                   onPress={() => removeItem(setScriptures, scriptures, index)}
                   style={styles.removeButton}
                 >
-                  <Ionicons name="remove-circle" size={24} color="#ff6b6b" />
+                  <Text style={styles.removeIcon}>－</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -241,7 +241,7 @@ export default function CreateScreen() {
               }
               style={styles.addButton}
             >
-              <Ionicons name="add-circle" size={24} color="#6c5ce7" />
+              <Text style={styles.addIcon}>＋</Text>
             </TouchableOpacity>
           </View>
           {objections.map((obj, index) => (
@@ -277,7 +277,7 @@ export default function CreateScreen() {
                   onPress={() => removeItem(setObjections, objections, index)}
                   style={styles.removeButtonAbsolute}
                 >
-                  <Ionicons name="close-circle" size={20} color="#ff6b6b" />
+                  <Text style={styles.closeIcon}>✕</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -297,7 +297,7 @@ export default function CreateScreen() {
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Ionicons name="checkmark-circle" size={24} color="#fff" />
+              <Text style={styles.checkIcon}>✓</Text>
               <Text style={styles.saveButtonText}>Salva Presentazione</Text>
             </>
           )}
