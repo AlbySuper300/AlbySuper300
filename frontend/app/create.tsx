@@ -404,4 +404,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  addIcon: {
+    color: '#6c5ce7',
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  removeIcon: {
+    color: '#ff6b6b',
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  closeIcon: {
+    color: '#ff6b6b',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  checkIcon: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+  },
 });
