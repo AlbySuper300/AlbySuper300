@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+
 import * as Location from 'expo-location';
 import axios from 'axios';
 
@@ -162,7 +162,7 @@ export default function GenerateScreen() {
       >
         {/* Header Info */}
         <View style={styles.headerInfo}>
-          <Ionicons name="sparkles" size={32} color="#ffd700" />
+          <Text style={styles.headerStar}>★</Text>
           <Text style={styles.headerTitle}>Genera con AI</Text>
           <Text style={styles.headerSubtitle}>
             L'intelligenza artificiale creerà una presentazione personalizzata basata
@@ -173,7 +173,7 @@ export default function GenerateScreen() {
         {/* Location */}
         {location && (
           <View style={styles.locationBadge}>
-            <Ionicons name="location" size={16} color="#00cec9" />
+            <Text style={styles.locationIcon}>📍</Text>
             <Text style={styles.locationText}>{location}</Text>
           </View>
         )}
@@ -277,7 +277,7 @@ export default function GenerateScreen() {
             </>
           ) : (
             <>
-              <Ionicons name="sparkles" size={24} color="#000" />
+              <Text style={styles.generateStar}>★</Text>
               <Text style={styles.generateButtonText}>Genera Presentazione</Text>
             </>
           )}
