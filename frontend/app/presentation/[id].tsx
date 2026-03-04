@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -118,7 +117,7 @@ export default function PresentationDetailScreen() {
           <Text style={styles.title}>{presentation.title}</Text>
           {presentation.is_ai_generated && (
             <View style={styles.aiBadge}>
-              <Ionicons name="sparkles" size={14} color="#ffd700" />
+              <Text style={styles.aiStar}>★</Text>
               <Text style={styles.aiBadgeText}>AI</Text>
             </View>
           )}
@@ -133,7 +132,7 @@ export default function PresentationDetailScreen() {
       {/* Intro */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Ionicons name="chatbubble-outline" size={20} color="#6c5ce7" />
+          <Text style={styles.sectionIcon}>💬</Text>
           <Text style={styles.sectionTitle}>Come iniziare</Text>
         </View>
         <View style={styles.introCard}>
@@ -145,7 +144,7 @@ export default function PresentationDetailScreen() {
       {presentation.main_points.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="list-outline" size={20} color="#6c5ce7" />
+            <Text style={styles.sectionIcon}>📋</Text>
             <Text style={styles.sectionTitle}>Punti principali</Text>
           </View>
           {presentation.main_points.map((point, index) => (
@@ -163,12 +162,12 @@ export default function PresentationDetailScreen() {
       {presentation.questions.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="help-circle-outline" size={20} color="#6c5ce7" />
+            <Text style={styles.sectionIcon}>❓</Text>
             <Text style={styles.sectionTitle}>Domande da porre</Text>
           </View>
           {presentation.questions.map((question, index) => (
             <View key={index} style={styles.questionCard}>
-              <Ionicons name="help" size={16} color="#ffd700" />
+              <Text style={styles.questionMark}>?</Text>
               <Text style={styles.questionText}>{question}</Text>
             </View>
           ))}
@@ -179,7 +178,7 @@ export default function PresentationDetailScreen() {
       {presentation.scriptures.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="book-outline" size={20} color="#6c5ce7" />
+            <Text style={styles.sectionIcon}>📖</Text>
             <Text style={styles.sectionTitle}>Scritture bibliche</Text>
           </View>
           <Text style={styles.scriptureHint}>Tocca per leggere su wol.jw.org</Text>
@@ -190,9 +189,9 @@ export default function PresentationDetailScreen() {
               onPress={() => openScripture(scripture)}
               activeOpacity={0.7}
             >
-              <Ionicons name="document-text" size={20} color="#00cec9" />
+              <Text style={styles.scriptureIcon}>📜</Text>
               <Text style={styles.scriptureReference}>{scripture.reference}</Text>
-              <Ionicons name="chevron-forward" size={20} color="#6a6a8a" />
+              <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -202,7 +201,7 @@ export default function PresentationDetailScreen() {
       {presentation.objections.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="shield-outline" size={20} color="#6c5ce7" />
+            <Text style={styles.sectionIcon}>🛡️</Text>
             <Text style={styles.sectionTitle}>Obiezioni comuni</Text>
           </View>
           {presentation.objections.map((obj, index) => (
@@ -213,11 +212,9 @@ export default function PresentationDetailScreen() {
               activeOpacity={0.8}
             >
               <View style={styles.objectionHeader}>
-                <Ionicons
-                  name={expandedObjections.has(index) ? 'chevron-down' : 'chevron-forward'}
-                  size={20}
-                  color="#ff6b6b"
-                />
+                <Text style={styles.objectionChevron}>
+                  {expandedObjections.has(index) ? '▼' : '▶'}
+                </Text>
                 <Text style={styles.objectionText}>{obj.objection}</Text>
               </View>
               {expandedObjections.has(index) && (
@@ -285,6 +282,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 4,
   },
+  aiStar: {
+    color: '#ffd700',
+    fontSize: 12,
+  },
   aiBadgeText: {
     color: '#ffd700',
     fontSize: 12,
@@ -311,6 +312,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginBottom: 12,
+  },
+  sectionIcon: {
+    fontSize: 18,
   },
   sectionTitle: {
     fontSize: 18,
@@ -364,6 +368,11 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 10,
   },
+  questionMark: {
+    color: '#ffd700',
+    fontSize: 18,
+    fontWeight: '700',
+  },
   questionText: {
     flex: 1,
     fontSize: 15,
@@ -387,11 +396,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#00cec9',
   },
+  scriptureIcon: {
+    fontSize: 18,
+  },
   scriptureReference: {
     flex: 1,
     fontSize: 16,
     color: '#00cec9',
     fontWeight: '600',
+  },
+  chevron: {
+    fontSize: 24,
+    color: '#6a6a8a',
   },
   objectionCard: {
     backgroundColor: '#1a1a2e',
@@ -405,6 +421,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
+  },
+  objectionChevron: {
+    color: '#ff6b6b',
+    fontSize: 12,
+    marginTop: 3,
   },
   objectionText: {
     flex: 1,
