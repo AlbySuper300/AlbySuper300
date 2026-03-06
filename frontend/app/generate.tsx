@@ -437,4 +437,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  headerStar: {
+    fontSize: 32,
+    color: '#ffd700',
+  },
+  locationIcon: {
+    fontSize: 14,
+  },
+  generateStar: {
+    fontSize: 20,
+    color: '#000',
+  },
+  refreshIcon: {
+    fontSize: 20,
+    color: '#6c5ce7',
+  },
+  refreshDisabled: {
+    fontSize: 20,
+    color: '#6a6a8a',
+  },
+  checkboxChecked: {
+    fontSize: 22,
+    color: '#6c5ce7',
+  },
+  checkboxUnchecked: {
+    fontSize: 22,
+    color: '#6a6a8a',
+  },
 });
