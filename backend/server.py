@@ -343,8 +343,11 @@ async def fetch_scripture_text_from_wol(url: str, book_num: str = None, chapter:
         return None
 
 async def fetch_scripture_from_wol(reference: str) -> Optional[Scripture]:
-    """Fetch scripture text from wol.jw.org"""
+    """Fetch scripture text - first from local DB, then from wol.jw.org"""
     try:
+        # FIRST: Try to get from local database (instant!)
+        scripture_text = get_scripture_from_local_db(reference)
+        
         # Convert reference to URL format
         search_query = reference.replace(" ", "+")
         
@@ -393,7 +396,6 @@ async def fetch_scripture_from_wol(reference: str) -> Optional[Scripture]:
                 break
         
         wol_url = None
-        scripture_text = None
         
         if book_num and chapter:
             # Build WOL URL for the specific verse
@@ -401,14 +403,15 @@ async def fetch_scripture_from_wol(reference: str) -> Optional[Scripture]:
             if verse:
                 wol_url += f"#{book_num}:{chapter}:{verse}"
             
-            # Try to fetch the text with verse info
-            scripture_text = await fetch_scripture_text_from_wol(
-                wol_url, 
-                book_num=book_num, 
-                chapter=chapter, 
-                verse_start=verse, 
-                verse_end=verse_end
-            )
+            # If not found in local DB, try to fetch from web (but don't wait too long)
+            if not scripture_text:
+                scripture_text = await fetch_scripture_text_from_wol(
+                    wol_url, 
+                    book_num=book_num, 
+                    chapter=chapter, 
+                    verse_start=verse, 
+                    verse_end=verse_end
+                )
         else:
             # Fallback to search URL
             wol_url = f"https://wol.jw.org/it/wol/s/r6/lp-i?q={search_query}"
